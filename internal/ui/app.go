@@ -104,15 +104,17 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-// handleKey routes key presses, giving the detail overlay first refusal.
+// handleKey routes key presses. The detail pane is a normal column, so unlike a
+// modal it does not swallow navigation keys; only the overlay fallback does.
 func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	if key.Matches(msg, m.keys.Quit) {
 		return m, tea.Quit
 	}
 
-	if m.detail.Visible() {
+	if m.detail.Visible() && !m.layout.showDetail {
 		if key.Matches(msg, m.keys.Close, m.keys.Open) {
 			m.detail.Hide()
+			m.applyLayout()
 		}
 		return m, nil
 	}
@@ -129,7 +131,20 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m.openSelection()
 
 	case key.Matches(msg, m.keys.Close):
+		if m.detail.Visible() {
+			m.detail.Hide()
+			m.applyLayout()
+			return m, nil
+		}
 		m.setFocus(focusMonth)
+
+	case key.Matches(msg, m.keys.Copy):
+		m.copySelection()
+
+	case key.Matches(msg, m.keys.CopyLink):
+		if len(msg.Runes) > 0 {
+			m.copyLink(int(msg.Runes[0] - '0'))
+		}
 
 	case key.Matches(msg, m.keys.Refresh):
 		return m.refresh()
@@ -146,6 +161,7 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case key.Matches(msg, m.keys.PrevWeek):
 		if m.focus == focusAgenda {
 			m.agenda.MoveCursor(-1)
+			m.trackSelection()
 			return m, nil
 		}
 		return m.moveTo(m.cursor.AddDate(0, 0, -7))
@@ -153,6 +169,7 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case key.Matches(msg, m.keys.NextWeek):
 		if m.focus == focusAgenda {
 			m.agenda.MoveCursor(1)
+			m.trackSelection()
 			return m, nil
 		}
 		return m.moveTo(m.cursor.AddDate(0, 0, 7))
@@ -174,12 +191,25 @@ func (m Model) openSelection() (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 		m.setFocus(focusAgenda)
+		m.trackSelection()
 		return m, nil
 	}
 	if event, ok := m.agenda.Selected(); ok {
 		m.detail.Show(event)
+		m.applyLayout()
 	}
 	return m, nil
+}
+
+// trackSelection keeps an open detail view on the currently selected event, so
+// the side pane follows the agenda cursor instead of freezing on one event.
+func (m *Model) trackSelection() {
+	if !m.detail.Visible() {
+		return
+	}
+	if event, ok := m.agenda.Selected(); ok {
+		m.detail.Show(event)
+	}
 }
 
 // refresh drops the cache and refetches the visible window.
@@ -236,6 +266,7 @@ func (m *Model) syncPanes() {
 	m.legend.SetCalendars(m.store.Calendars())
 	m.month.Focus(m.focus == focusMonth)
 	m.agenda.Focus(m.focus == focusAgenda)
+	m.trackSelection()
 }
 
 // applyLayout recomputes geometry and resizes every component.
@@ -243,8 +274,8 @@ func (m *Model) syncPanes() {
 // The grid quantises its width to whole cells, so any slack is handed to the
 // agenda; that keeps the panes flush with the terminal edge.
 func (m *Model) applyLayout() {
-	chrome := m.header.Height() + m.status.Height() + m.helpHeight()
-	m.layout = computeLayout(m.width, m.height, chrome, m.month.Height())
+	chrome := m.header.Height() + m.footerHeight()
+	m.layout = computeLayout(m.width, m.height, chrome, m.month.Height(), m.detail.Visible())
 
 	m.header.SetWidth(m.width)
 	m.status.SetWidth(m.width)
@@ -259,13 +290,18 @@ func (m *Model) applyLayout() {
 
 	m.legend.SetSize(m.layout.legend.InnerWidth(), m.layout.legend.InnerHeight())
 	m.agenda.SetSize(m.layout.agenda.InnerWidth(), m.layout.agenda.InnerHeight()-1) // 1 = date heading
+	m.detail.SetPaneWidth(m.layout.detail.InnerWidth())
 	m.detail.SetSize(m.width, m.height)
 	m.syncPanes()
 }
 
-// helpHeight measures the rendered help block.
-func (m Model) helpHeight() int {
-	return lipgloss.Height(m.help.View(m.keys))
+// footerHeight measures the bottom chrome: one combined row of shortcuts and
+// sync state, or the help grid plus a status row when help is expanded.
+func (m Model) footerHeight() int {
+	if m.help.ShowAll {
+		return lipgloss.Height(m.help.View(m.keys)) + m.status.Height()
+	}
+	return 1
 }
 
 // shiftMonth moves by n months, clamping the day to the target month's length.

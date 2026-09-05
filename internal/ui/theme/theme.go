@@ -140,6 +140,12 @@ func (t Theme) FocusedPanel() lipgloss.Style {
 	return t.Panel.BorderForeground(t.Palette.Primary)
 }
 
+// DetailPanel is the side pane holding event details, accented to set it apart
+// from the calendar panes.
+func (t Theme) DetailPanel() lipgloss.Style {
+	return t.Panel.BorderForeground(t.Palette.Secondary)
+}
+
 // EventColor resolves a provider-supplied hex colour, falling back to the
 // theme's primary when the provider gave none.
 func (t Theme) EventColor(hex string) lipgloss.TerminalColor {

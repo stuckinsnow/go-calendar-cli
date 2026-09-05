@@ -7,8 +7,8 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-// View composes the header, panes, status bar and help, then lays the detail
-// overlay on top.
+// View composes the header, panes, status bar and help. On terminals too narrow
+// for a detail column, the details are laid over the top instead.
 func (m Model) View() string {
 	if !m.ready {
 		return m.theme.Subtitle.Render("starting…")
@@ -20,35 +20,82 @@ func (m Model) View() string {
 	screen := lipgloss.JoinVertical(lipgloss.Left,
 		m.header.View(),
 		m.panes(),
-		m.status.View(),
-		m.helpView(),
+		m.footer(),
 	)
+	if m.layout.showDetail {
+		return screen
+	}
 	return m.detail.Overlay(screen)
 }
 
-// panes renders the calendar column beside the agenda, or stacked when narrow.
+// footer is the bottom row: shortcuts on the left, sync state on the right. In
+// expanded help mode the help grid sits above that row.
+func (m Model) footer() string {
+	hints := m.help.View(m.keys)
+	if m.help.ShowAll {
+		return lipgloss.JoinVertical(lipgloss.Left,
+			lipgloss.NewStyle().MaxWidth(m.width).Render(hints),
+			m.status.View(),
+		)
+	}
+	return lipgloss.NewStyle().MaxWidth(m.width).Render(m.status.Footer(hints))
+}
+
+// panes renders the calendar column, the agenda and, when it fits, the event
+// details; or grid above agenda when the terminal is narrow.
 func (m Model) panes() string {
-	left := m.calendarColumn()
-	agenda := m.panelFor(focusAgenda, m.layout.agenda).Render(m.agenda.View())
+	columns := []string{m.calendarColumn()}
+
+	columns = append(columns,
+		m.panelFor(focusAgenda, m.layout.agenda).Render(clip(m.agenda.View(), m.layout.agenda)))
+
+	if m.layout.showDetail {
+		columns = append(columns,
+			m.theme.DetailPanel().
+				Width(m.layout.detail.Width).
+				Height(m.layout.detail.Height).
+				Render(clip(m.detail.Pane(), m.layout.detail)))
+	}
 
 	if m.layout.stacked {
-		return lipgloss.JoinVertical(lipgloss.Left, left, agenda)
+		return lipgloss.JoinVertical(lipgloss.Left, columns...)
 	}
-	return lipgloss.JoinHorizontal(lipgloss.Top, left, strings.Repeat(" ", paneGap), agenda)
+	return joinColumns(columns)
 }
 
 // calendarColumn is the month grid, with the legend beneath it when it fits.
 func (m Model) calendarColumn() string {
-	grid := m.panelFor(focusMonth, m.layout.month).Render(m.month.View())
+	grid := m.panelFor(focusMonth, m.layout.month).Render(clip(m.month.View(), m.layout.month))
 	if !m.layout.showLegend || m.legend.Empty() {
 		return grid
 	}
 	legend := m.theme.Panel.
 		Width(m.layout.legend.Width).
 		Height(m.layout.legend.Height).
-		Render(m.legend.View())
+		Render(clip(m.legend.View(), m.layout.legend))
 
 	return lipgloss.JoinVertical(lipgloss.Left, grid, legend)
+}
+
+// clip guarantees a component cannot push its panel past the geometry it was
+// given, whatever it renders.
+func clip(content string, p pane) string {
+	return lipgloss.NewStyle().
+		MaxWidth(p.InnerWidth()).
+		MaxHeight(p.Height).
+		Render(content)
+}
+
+// joinColumns places panes side by side with a single-column gap between them.
+func joinColumns(columns []string) string {
+	spaced := make([]string, 0, len(columns)*2-1)
+	for i, col := range columns {
+		if i > 0 {
+			spaced = append(spaced, strings.Repeat(" ", paneGap))
+		}
+		spaced = append(spaced, col)
+	}
+	return lipgloss.JoinHorizontal(lipgloss.Top, spaced...)
 }
 
 // panelFor returns a sized panel style, highlighting the focused pane.

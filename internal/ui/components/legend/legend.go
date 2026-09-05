@@ -29,23 +29,43 @@ func (m *Model) SetSize(width, height int) { m.width, m.height = width, height }
 // Empty reports whether there is anything to show.
 func (m Model) Empty() bool { return len(m.entries) == 0 }
 
-// View renders the calendar list followed by the grid symbol key.
+// View renders the calendar list followed by the grid symbol key, clipped to
+// the height the layout granted.
 func (m Model) View() string {
+	const keyLines = 2 // blank spacer plus the symbol key
+
 	lines := []string{m.theme.DetailLabel.Render("Calendars")}
 
-	// Leave room for the symbol key.
-	budget := m.height - 3
+	budget := m.height - len(lines)
+	showKey := budget > keyLines
+	if showKey {
+		budget -= keyLines
+	}
+
 	for i, e := range m.entries {
-		if i >= budget && budget > 0 {
-			lines = append(lines, m.theme.EventMeta.Render("…"))
+		if i >= budget {
+			if budget > 0 {
+				lines[len(lines)-1] = m.theme.EventMeta.Render("…")
+			}
 			break
 		}
 		swatch := lipgloss.NewStyle().Foreground(m.theme.EventColor(e.color)).Render("■")
 		lines = append(lines, swatch+" "+m.theme.EventTitle.Render(truncate(e.name, m.width-2)))
 	}
 
-	lines = append(lines, "", m.theme.EventMeta.Render("• timed   ▪ all day   · today"))
+	if showKey {
+		lines = append(lines, "", m.theme.EventMeta.Render(symbolKey(m.width)))
+	}
 	return strings.Join(lines, "\n")
+}
+
+// symbolKey adapts the legend footnote to the available width.
+func symbolKey(width int) string {
+	full := "• timed   ▪ all day   · today"
+	if width >= len([]rune(full)) {
+		return full
+	}
+	return "• timed  ▪ all day"
 }
 
 func truncate(s string, width int) string {

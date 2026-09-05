@@ -14,14 +14,15 @@ const (
 
 // weeklyTemplate describes an event that repeats on given weekdays.
 type weeklyTemplate struct {
-	Title    string
-	Location string
-	Calendar string
-	Color    string
-	Hour     int
-	Minute   int
-	Minutes  int
-	Weekdays []time.Weekday
+	Title      string
+	Location   string
+	Calendar   string
+	Color      string
+	Conference string
+	Hour       int
+	Minute     int
+	Minutes    int
+	Weekdays   []time.Weekday
 }
 
 func (t weeklyTemplate) at() time.Duration {
@@ -41,7 +42,8 @@ var weekdays = []time.Weekday{time.Monday, time.Tuesday, time.Wednesday, time.Th
 
 var weeklyTemplates = []weeklyTemplate{
 	{Title: "Standup", Location: "Google Meet", Calendar: "Work", Color: colorWork,
-		Hour: 9, Minute: 30, Minutes: 15, Weekdays: weekdays},
+		Conference: "https://meet.google.com/abc-defg-hij",
+		Hour:       9, Minute: 30, Minutes: 15, Weekdays: weekdays},
 	{Title: "Deep work block", Calendar: "Work", Color: colorFocus,
 		Hour: 10, Minutes: 120, Weekdays: []time.Weekday{time.Monday, time.Wednesday, time.Friday}},
 	{Title: "Sprint planning", Location: "Google Meet", Calendar: "Work", Color: colorTravel,
@@ -72,8 +74,10 @@ type oneOff struct {
 
 var oneOffs = []oneOff{
 	{Title: "Coffee with Sam", Location: "Neighbourhood Roast", Calendar: "Personal", Color: colorPersonal,
-		DayOffset: 0, Hour: 9, Minutes: 45, Description: "Catch-up before the week starts."},
-	{Title: "Grocery run", Calendar: "Personal", Color: colorFocus, DayOffset: 0, Hour: 17, Minute: 30, Minutes: 45},
+		DayOffset: 0, Hour: 9, Minutes: 45,
+		Description: "Catch-up before the week starts. Menu: https://neighbourhoodroast.example/menu"},
+	{Title: "Grocery run", Calendar: "Personal", Color: colorFocus, DayOffset: 0, Hour: 17, Minute: 30, Minutes: 45,
+		Description: "List is in the shared note: https://keep.google.com/#NOTE/demo-list"},
 	{Title: "Quarterly review", Calendar: "Work", Color: colorAlert, DayOffset: -3,
 		Hour: 13, Minutes: 90, Description: "Slides due the evening before."},
 	{Title: "Book club", Location: "The Gatehouse", Calendar: "Personal", Color: colorFocus,

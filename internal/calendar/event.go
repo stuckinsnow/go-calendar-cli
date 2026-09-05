@@ -6,16 +6,18 @@ import "time"
 
 // Event is a single calendar entry, normalised away from any API shape.
 type Event struct {
-	ID          string
-	Title       string
-	Start       time.Time
-	End         time.Time
-	AllDay      bool
-	Location    string
-	Description string
-	Calendar    string // display name of the owning calendar
-	Color       string // hex colour such as "#7D56F4"; may be empty
-	Declined    bool
+	ID            string
+	Title         string
+	Start         time.Time
+	End           time.Time
+	AllDay        bool
+	Location      string
+	Description   string
+	Calendar      string // display name of the owning calendar
+	Color         string // hex colour such as "#7D56F4"; may be empty
+	URL           string // link to the event in Google Calendar, when known
+	ConferenceURL string // Meet/Zoom style joining link, when known
+	Declined      bool
 }
 
 // Duration reports the event length, clamped to at least a minute so that

@@ -53,10 +53,13 @@ type layout struct {
 	tooSmall bool
 	// showLegend fills leftover space under the grid with the calendar legend.
 	showLegend bool
+	// showDetail gives the event details their own column on the right.
+	showDetail bool
 
 	month  pane
 	agenda pane
 	legend pane
+	detail pane
 }
 
 // Model is the root Bubble Tea model. It owns the selected day and the event

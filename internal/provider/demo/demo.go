@@ -57,13 +57,14 @@ func recurringEvents(from, to time.Time, rng *rand.Rand) []calendar.Event {
 			}
 			start := day.Add(t.at())
 			out = append(out, calendar.Event{
-				ID:       fmt.Sprintf("demo-weekly-%s-%d", day.Format("20060102"), i),
-				Title:    t.Title,
-				Start:    start,
-				End:      start.Add(time.Duration(t.Minutes) * time.Minute),
-				Location: t.Location,
-				Calendar: t.Calendar,
-				Color:    t.Color,
+				ID:            fmt.Sprintf("demo-weekly-%s-%d", day.Format("20060102"), i),
+				Title:         t.Title,
+				Start:         start,
+				End:           start.Add(time.Duration(t.Minutes) * time.Minute),
+				Location:      t.Location,
+				Calendar:      t.Calendar,
+				Color:         t.Color,
+				ConferenceURL: t.Conference,
 			})
 		}
 	}

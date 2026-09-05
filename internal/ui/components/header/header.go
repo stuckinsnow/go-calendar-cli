@@ -23,9 +23,10 @@ func (m *Model) SetMonth(month time.Time) { m.month = month }
 func (m *Model) SetWidth(w int) { m.width = w }
 
 // Height is the number of lines the header occupies.
-func (Model) Height() int { return 2 }
+func (Model) Height() int { return 1 }
 
-// View renders "September 2026" with the source on the right, over a rule.
+// View renders "September 2026" with the source right-aligned. The panel
+// borders below provide the visual separation, so there is no rule here.
 func (m Model) View() string {
 	title := m.theme.Title.Render(m.month.Format("January 2006"))
 	week := m.theme.Subtitle.Render(fmt.Sprintf("  week %d", isoWeek(m.month)))
@@ -36,22 +37,10 @@ func (m Model) View() string {
 	if gap < 1 {
 		gap = 1
 	}
-
-	rule := lipgloss.NewStyle().
-		Foreground(m.theme.Palette.Border).
-		Render(strings.Repeat("─", max(m.width, 1)))
-
-	return lipgloss.JoinVertical(lipgloss.Left, left+strings.Repeat(" ", gap)+right, rule)
+	return left + strings.Repeat(" ", gap) + right
 }
 
 func isoWeek(t time.Time) int {
 	_, week := t.ISOWeek()
 	return week
-}
-
-func max(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
 }

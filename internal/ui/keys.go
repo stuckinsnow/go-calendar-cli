@@ -14,6 +14,8 @@ type KeyMap struct {
 	SwitchPane key.Binding
 	Open       key.Binding
 	Close      key.Binding
+	Copy       key.Binding
+	CopyLink   key.Binding
 	Refresh    key.Binding
 	Help       key.Binding
 	Quit       key.Binding
@@ -62,6 +64,14 @@ func DefaultKeyMap() KeyMap {
 			key.WithKeys("esc"),
 			key.WithHelp("esc", "back"),
 		),
+		Copy: key.NewBinding(
+			key.WithKeys("y"),
+			key.WithHelp("y", "copy event"),
+		),
+		CopyLink: key.NewBinding(
+			key.WithKeys("1", "2", "3", "4", "5", "6", "7", "8", "9"),
+			key.WithHelp("1–9", "copy a link from the event"),
+		),
 		Refresh: key.NewBinding(
 			key.WithKeys("r"),
 			key.WithHelp("r", "refresh"),
@@ -87,6 +97,7 @@ func (k KeyMap) ShortHelp() []key.Binding {
 		key.NewBinding(key.WithKeys("t"), key.WithHelp("t", "today")),
 		key.NewBinding(key.WithKeys("tab"), key.WithHelp("tab", "pane")),
 		key.NewBinding(key.WithKeys("enter"), key.WithHelp("↵", "details")),
+		k.Copy,
 		k.Help,
 		k.Quit,
 	}
@@ -97,6 +108,6 @@ func (k KeyMap) FullHelp() [][]key.Binding {
 	return [][]key.Binding{
 		{k.PrevDay, k.NextDay, k.PrevWeek, k.NextWeek},
 		{k.PrevMonth, k.NextMonth, k.Today, k.Refresh},
-		{k.SwitchPane, k.Open, k.Close, k.Help, k.Quit},
+		{k.SwitchPane, k.Open, k.Close, k.Copy, k.CopyLink, k.Help, k.Quit},
 	}
 }

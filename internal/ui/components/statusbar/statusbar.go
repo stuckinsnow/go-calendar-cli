@@ -39,11 +39,26 @@ func (m *Model) MarkSynced(at time.Time) {
 // Height is the number of lines the bar occupies.
 func (Model) Height() int { return 1 }
 
-// View renders the bar with the message on the left and sync state right.
-func (m Model) View() string {
-	left := m.leftSegment()
-	right := m.rightSegment()
+// Footer renders one row: key hints on the left, state on the right. Keeping
+// both on a single line saves a row and puts "synced" beside the shortcuts.
+func (m Model) Footer(hints string) string {
+	left := hints
+	if state := m.leftSegment(); state != "" {
+		left = state
+		if hints != "" {
+			left = state + m.theme.Status.Render("  ·  ") + hints
+		}
+	}
+	return m.row(left, m.rightSegment())
+}
 
+// View renders the bar on its own, without key hints.
+func (m Model) View() string {
+	return m.row(m.leftSegment(), m.rightSegment())
+}
+
+// row lays out two segments across the full width.
+func (m Model) row(left, right string) string {
 	gap := m.width - lipgloss.Width(left) - lipgloss.Width(right)
 	if gap < 1 {
 		gap = 1

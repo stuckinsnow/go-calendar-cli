@@ -33,17 +33,37 @@ func convert(item *gapi.Event, ref calendarRef, pal palette) (calendar.Event, bo
 	}
 
 	return calendar.Event{
-		ID:          fmt.Sprintf("%s/%s", ref.ID, item.Id),
-		Title:       title,
-		Start:       start,
-		End:         end,
-		AllDay:      allDay,
-		Location:    strings.TrimSpace(item.Location),
-		Description: cleanDescription(item.Description),
-		Calendar:    ref.Summary,
-		Color:       firstNonEmpty(pal.event(item.ColorId), ref.Color),
-		Declined:    declined(item),
+		ID:            fmt.Sprintf("%s/%s", ref.ID, item.Id),
+		Title:         title,
+		Start:         start,
+		End:           end,
+		AllDay:        allDay,
+		Location:      strings.TrimSpace(item.Location),
+		Description:   cleanDescription(item.Description),
+		Calendar:      ref.Summary,
+		Color:         firstNonEmpty(pal.event(item.ColorId), ref.Color),
+		URL:           item.HtmlLink,
+		ConferenceURL: conferenceURL(item),
+		Declined:      declined(item),
 	}, true
+}
+
+// conferenceURL finds the joining link for a meeting, preferring the modern
+// conferenceData entry points over the legacy hangoutLink.
+func conferenceURL(item *gapi.Event) string {
+	if item.ConferenceData != nil {
+		for _, ep := range item.ConferenceData.EntryPoints {
+			if ep.EntryPointType == "video" && ep.Uri != "" {
+				return ep.Uri
+			}
+		}
+		for _, ep := range item.ConferenceData.EntryPoints {
+			if ep.Uri != "" {
+				return ep.Uri
+			}
+		}
+	}
+	return item.HangoutLink
 }
 
 // parseEventTime handles both timed events and all-day dates.
