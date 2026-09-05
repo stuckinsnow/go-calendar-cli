@@ -1,5 +1,6 @@
 # VIBE CODED
 
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/59351789-8b7d-438c-91c5-c9f6f28f0772" />
 ## gcal
 
 A Google Calendar client for the terminal, built with the Charm stack
