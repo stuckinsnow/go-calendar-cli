@@ -1,4 +1,6 @@
-# gcal
+# VIBE CODED
+
+## gcal
 
 A Google Calendar client for the terminal, built with the Charm stack
 (Bubble Tea, Lip Gloss, Bubbles): a month grid with per-day colour-coded event
